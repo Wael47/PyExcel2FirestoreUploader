@@ -11,19 +11,12 @@ db = firestore.client()
 
 cities_ref = db.collection("tour")
 
-df = pd.read_excel('Dataset.xlsx')
+df = pd.read_excel('Dataset.xlsx', usecols='A:K')
 
-start_row = 0
-end_row = 44
-start_col = 0
-end_col = 11
-df = df.iloc[start_row:end_row + 1, start_col:end_col + 1]
 headers = df.columns
-
 for index, row in df.iterrows():
     json = ""
     json += '{'
-    row = row[::-1]
     for column_name, cell_value in row.items():
         column_name, cell_value = str(column_name).strip(), str(cell_value).strip()
         if column_name == 'الرقم' or column_name == 'التقييم':
@@ -31,11 +24,15 @@ for index, row in df.iterrows():
         elif column_name == 'النشاطات' or column_name == 'مسار الرحلة':
             json += f'"{column_name}":{[j.strip() for j in cell_value.split(",") if j]},'
         elif column_name == 'التاريخ':
-            json += f'"{column_name}":"{cell_value.split( )[0]}",'
+            json += f'"{column_name}":"{cell_value.split()[0]}",'
         else:
             json += f'"{column_name}":"{cell_value}",'
     json += '}'
     final_dictionary = eval(json)
-    print(final_dictionary)
-    cities_ref.document().set(final_dictionary)
 
+    progress = (index + 1) / len(df)
+    bar_length = 20
+    block = int(round(bar_length * progress))
+    progress_bar = "[" + "=" * block + " " * (bar_length - block) + "]"
+    print(f"\rProgress: {progress_bar} {int(progress * 100)}%", end='', flush=True)
+    cities_ref.document().set(final_dictionary)
